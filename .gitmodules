@@ -1,1 +1,4 @@
 
+[submodule "public"]
+	path = public
+	url = https://github.com/Artemijs-Matusevs/MonkeyPuzzle-front-end.git
