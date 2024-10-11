@@ -9,6 +9,9 @@ const whisper = await initWhisper("base.en");
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
+//Store status of each transcrtip
+let transcripts = {};
+
 //Configure storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -34,14 +37,32 @@ app.post("/upload-video", upload.single('video'), async function (req, res) {
     //Define input and output paths
     const inputVideoPath = req.file.path;
     const outputAudioPath = 'public/uploads/' + req.file.filename.split(".")[0] + 'wav';
+    const transcriptId = req.file.filename.split(".")[0];
 
-    try {
-        await convertVideoToWav(inputVideoPath, outputAudioPath);
-        const transcript = await whisper.transcribe(outputAudioPath);
-        res.send(transcript);
-    } catch (error){
-        res.status(500).send("Error during transcription/conversion");
-        console.log(error.message);
+    //Set status of the current transcript to processing
+    transcripts[transcriptId] = {status: 'processing'};
+
+    convertVideoToWav(inputVideoPath, outputAudioPath)
+        .then(async () => {
+            const transcript = await whisper.transcribe(outputAudioPath);
+            transcripts[transcriptId] = {status: `done`, transcript: transcript};
+        })
+        .catch((error) => {
+            transcripts[transcriptId] = {status: `error`, error: error.message}
+        });
+
+    res.send({transcriptId});
+})
+
+//Check the status of the transcriptions
+app.get(`/transcript-status/:id`, (req, res) => {
+    const transcriptId = req.params.id;
+
+    if (!transcripts[transcriptId]) {
+        return res.status(404).send(`Transcript not found`);
+    }else{
+        console.log(transcripts[transcriptId]);
+        res.send(transcripts[transcriptId]);
     }
 })
 
