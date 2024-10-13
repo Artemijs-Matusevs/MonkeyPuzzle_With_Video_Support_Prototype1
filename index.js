@@ -37,7 +37,7 @@ app.post("/upload-video", upload.single('video'), async function (req, res) {
     //Define input and output paths
     const inputVideoPath = req.file.path;
     const outputAudioPath = 'public/uploads/' + req.file.filename.split(".")[0] + 'wav';
-    const transcriptId = req.file.filename.split(".")[0];
+    const transcriptId = req.body.tab_id;
 
     //Set status of the current transcript to processing
     transcripts[transcriptId] = {status: 'processing'};
