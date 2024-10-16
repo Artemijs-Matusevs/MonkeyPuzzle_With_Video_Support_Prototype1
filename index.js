@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { initWhisper } from "whisper-onnx-speech-to-text";
 import multer from "multer";
 import ffmpeg from "fluent-ffmpeg";
+import bodyParser from "body-parser";
 
 const whisper = await initWhisper("base.en");
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -12,13 +13,21 @@ const app = express();
 //Store status of each transcrtip
 let transcripts = {};
 
+//Body parser
+app.use(bodyParser.urlencoded({ extended: true }));
+
 //Configure storage
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'public/uploads/')
     },
     filename: function (req, file, cb) {
-        cb(null, file.fieldname + '-' + Date.now() + '.' + file.originalname.split('.').pop());
+        const videoId = req.body.tab_id || 'default'; // Access tab_id from the form
+        const extension = file.originalname.split('.').pop();
+
+        console.log(videoId);
+
+        cb(null, videoId + "." + extension);
     }
 });
 
@@ -29,9 +38,20 @@ app.get("/", (req, res) => {
 })
 
 //Post video content
-app.post("/upload-video", upload.single('video'), async function (req, res) {
+app.post("/upload-video", upload.single('video'), async function (req, res, next) {
     if (!req.file) {
         return res.status(400).send("No files were uploaded.");
+    }
+
+    //console.log(req.body.tab_id, req.file);
+
+    storage.filename = function (req, file, cb) {
+        const videoId = req.body.tab_id || 'default'; // Access tab_id from the form
+        const extension = file.originalname.split('.').pop();
+
+        console.log(videoId);
+
+        cb(null, videoId + "." + extension);
     }
 
     //Define input and output paths
@@ -45,7 +65,8 @@ app.post("/upload-video", upload.single('video'), async function (req, res) {
     convertVideoToWav(inputVideoPath, outputAudioPath)
         .then(async () => {
             const transcript = await whisper.transcribe(outputAudioPath);
-            transcripts[transcriptId] = {status: `done`, transcript: transcript};
+            transcripts[transcriptId] = {status: `done`, transcript: transcript.chunks};
+            console.log(transcript.chunks);
         })
         .catch((error) => {
             transcripts[transcriptId] = {status: `error`, error: error.message}
@@ -61,7 +82,7 @@ app.get(`/transcript-status/:id`, (req, res) => {
     if (!transcripts[transcriptId]) {
         return res.status(404).send(`Transcript not found`);
     }else{
-        console.log(transcripts[transcriptId]);
+        //console.log(transcripts[transcriptId]);
         res.send(transcripts[transcriptId]);
     }
 })
