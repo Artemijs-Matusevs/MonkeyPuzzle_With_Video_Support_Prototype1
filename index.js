@@ -82,7 +82,7 @@ app.get(`/transcript-status/:id`, (req, res) => {
     if (!transcripts[transcriptId]) {
         return res.status(404).send(`Transcript not found`);
     }else{
-        //console.log(transcripts[transcriptId]);
+        console.log(transcripts[transcriptId]);
         res.send(transcripts[transcriptId]);
     }
 })
