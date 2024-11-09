@@ -18,17 +18,22 @@ export async function uploadVideo(req, res) {
     //Set status of the current transcript to processing
     transcripts[transcriptId] = {status: 'processing'};
 
-    convertVideoToWav(inputVideoPath, outputAudioPath)
-    .then(async () => {
-        const transcript = await transcribeAudio(outputAudioPath);
-        transcripts[transcriptId] = {status: 'done', transcript: transcript.chunks};
-        console.log(transcript.chunks);
-    })
-    .catch((error) => {
-        transcripts[transcriptId] = {status: 'error', error: error.message}
-    });
+    try {
+        await convertVideoToWav(inputVideoPath, outputAudioPath);
 
-    res.send({transcriptId});
+        res.send({transcriptId});
+
+        transcribeAudio(outputAudioPath)
+        .then((transcriptChunks) => {
+            transcripts[transcriptId] = {status: 'done', transcript: transcriptChunks};
+        })
+        .catch((error) => {
+            transcripts[transcriptId] = {status: 'error', error: error.message};
+        })
+    }catch(error) {
+        transcripts[transcriptId] = {status: 'error', error: error.message};
+        res.status(500).send({error: error.message});
+    }
 }
 
 export function getTranscriptStatus(req, res) {
@@ -37,7 +42,7 @@ export function getTranscriptStatus(req, res) {
     if (!transcripts[transcriptId]){
         return res.status(404).send(`Transcript not found`);
     }else{
-        console.log(transcripts[transcriptId]);
+        //console.log(transcripts[transcriptId]);
         res.send(transcripts[transcriptId]);
     }
 }
