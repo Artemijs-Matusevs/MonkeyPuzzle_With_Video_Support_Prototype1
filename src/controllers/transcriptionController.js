@@ -15,7 +15,7 @@ export async function uploadVideo(req, res) {
     const outputAudioPath = 'public/uploads/' + req.file.filename.split(".")[0] + 'wav';
     const transcriptId = req.body.tab_id;
 
-    console.log("Received file fr transcript ID:", transcriptId);
+    console.log("Received file for transcript ID:", transcriptId);
 
     //Set status of the current transcript to processing
     transcripts[transcriptId] = {status: 'processing'};
@@ -30,10 +30,10 @@ export async function uploadVideo(req, res) {
             transcripts[transcriptId] = {status: 'done', transcript: transcriptChunks};
         })
         .catch((error) => {
-            transcripts[transcriptId] = {status: 'error', error: error.message};
+            transcripts[transcriptId] = {status: 'error 1', error: error.message};
         })
     }catch(error) {
-        transcripts[transcriptId] = {status: 'error', error: error.message};
+        transcripts[transcriptId] = {status: 'error 2', error: error.message};
         res.status(500).send({error: error.message});
     }
 }
