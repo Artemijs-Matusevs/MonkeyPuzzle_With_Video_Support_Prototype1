@@ -15,6 +15,8 @@ export async function uploadVideo(req, res) {
     const outputAudioPath = 'public/uploads/' + req.file.filename.split(".")[0] + 'wav';
     const transcriptId = req.body.tab_id;
 
+    console.log("Received file fr transcript ID:", transcriptId);
+
     //Set status of the current transcript to processing
     transcripts[transcriptId] = {status: 'processing'};
 
