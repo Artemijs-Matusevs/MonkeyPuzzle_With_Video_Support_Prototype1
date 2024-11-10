@@ -3,7 +3,7 @@ import { initWhisper } from 'whisper-onnx-speech-to-text';
 
 (async () => {
     try{
-        const whisper = await initWhisper("base.en");
+        const whisper = await initWhisper("medium.en");
         const transcript = await whisper.transcribe(workerData.filePath);
         parentPort.postMessage({status: 'done', transcript: transcript.chunks});
     }catch (error) {
